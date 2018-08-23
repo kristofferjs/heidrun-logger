@@ -16,6 +16,8 @@ const client = sanityClient({
   token: config.token
 })
 
+const code = 'a'
+
 const lastLogQuery = '*[_type == "brewLog"] | order(_createdAt asc) { _id, title }[0]'
 
 async function run() {
@@ -28,7 +30,7 @@ async function run() {
   })
   
   const sendLogItem = (id, logItem) => {
-    console.log('Send logitem',  logItem['responseCode'])
+    console.log('Send logitem', logItem['responseCode'], id)
     const newLogItem = {}
     Object.keys(logItem).forEach(key => {
       // Convert to number
@@ -84,7 +86,7 @@ async function run() {
     }
   
     http.get(
-      `${config.url}?a`, (resp) => {
+      `${config.url}?${code}`, (resp) => {
         let data = ''
         resp.on('data', (chunk) => {
           data += chunk;
@@ -96,7 +98,7 @@ async function run() {
             logItem[param] = JSON.parse(data)[i]
           })
 
-          if (logItem['responseCode']) {
+          if (logItem['responseCode'] === code) {
             console.log('Got empty status from brewtroller')
           } else {
             sendLogItem(lastLog._id, logItem)
