@@ -1,6 +1,11 @@
-const http, { createServer } = require('http')
+const http = require('http')
+const {createServer} = http
 const { parse } = require('url')
 const next = require('next')
+const dev = process.env.NODE_ENV !== 'production'
+const app = next({ dev })
+const handle = app.getRequestHandler()
+
 const { BTCMD_GetStatus } = require('./lib/cgiByteCodeMap')
 const { config } = require('./config')
 const sanityClient = require('@sanity/client')
