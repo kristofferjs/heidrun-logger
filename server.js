@@ -1,14 +1,8 @@
-// This file doesn't go through babel or webpack transformation.
-// Make sure the syntax and sources this file requires are compatible with the current node version you are running
-// See https://github.com/zeit/next.js/issues/1245 for discussions on Universal Webpack or universal Babel
-const { createServer } = require('http')
+const http, { createServer } = require('http')
 const { parse } = require('url')
 const next = require('next')
-const {BTCMD_GetStatus} = require('./lib/cgiByteCodeMap')
-
-const http = require('http');
-const {BTCMD_GetStatus} = require('./lib/cgiByteCodeMap')
-const {config} = require('./config')
+const { BTCMD_GetStatus } = require('./lib/cgiByteCodeMap')
+const { config } = require('./config')
 const sanityClient = require('@sanity/client')
 
 const client = sanityClient({
@@ -57,7 +51,7 @@ setInterval(() => {
               console.log('responseCode', updatedLog.responseCode)
             })
           .catch(err => {
-            console.error('Oh no, the update failed: ', err.message)
+            console.error('Sanity client: Oh no, the update failed: ', err.message)
           })
       })
   
