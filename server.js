@@ -13,7 +13,8 @@ const sanityClient = require('@sanity/client')
 const client = sanityClient({
   projectId: config.projectId,
   dataset: config.dataset,
-  token: config.token
+  token: config.token,
+  useCdn: false
 })
 
 const code = 'a'
@@ -99,9 +100,10 @@ async function run() {
           })
 
           if (logItem['responseCode'] === code) {
-            console.log('Got empty status from brewtroller')
-          } else {
             sendLogItem(lastLog._id, logItem)
+            
+          } else {
+            console.log('Got empty status from brewtroller', data)
           }
         })
     
