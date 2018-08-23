@@ -16,7 +16,6 @@ const client = sanityClient({
   token: config.token
 })
 
-//const mock = ["a","0","0","44081152","252","8000","2187","100","0","0","0","0","2100","0","0","0","0","8000","2200","100","0","0","0","4294934528","4294934528","4294934528","2000","4294934528","4294934528","0","0","0","0","0","255","BENGLER ALE        ","0","255","","255"]
 const lastLogQuery = '*[_type == "brewLog"] | order(_createdAt asc) { _id, title }[0]'
 
 async function run() {
@@ -28,25 +27,35 @@ async function run() {
     return log
   })
   
-  
   const sendLogItem = (id, logItem) => {
-    Object.keys(logItem).map(key => {
+    console.log('Send logitem',  logItem['responseCode'])
+    const newLogItem = {}
+    Object.keys(logItem).forEach(key => {
+      // Convert to number
       if (
-        key != 'responseCode'
-        || key != 'Program1_Name'
-        || key != 'Program2_Name'
-        || key != 'Program3_Name'
+        key !== 'responseCode'
+        && key !== '_type'
+        && key !== '_key'
+        && key !== 'timestamp'
+        && key !== 'Program1_Name'
+        && key !== 'Program2_Name'
+        && key !== 'Program3_Name'
+        && key !== 'Mash_Zone_Active_Program_Step'
+        && key !== 'Mash_Zone_Active_Program_Recipe'
+        && key !== 'Boil_Zone_Active_Program_Step'
+        && key !== 'Boil_Zone_Active_Program_Recipe'
       ) {
-        logItem[key] = Number(logItem[key])  
+        newLogItem[key] = Number(logItem[key])
+      } else {
+        newLogItem[key] = logItem[key]
       }
     })
-    console.log('Send logitem',  logItem['responseCode'])
 
     // Send data to sanity
     client
       .patch(id)
       .setIfMissing({log: []})
-      .append('log', [logItem])
+      .append('log', [newLogItem])
       .commit()
       .then(updatedLog => {
           console.log('updatedLog')
@@ -68,7 +77,7 @@ async function run() {
     if (config.mock) {
       console.log('mock')
       BTCMD_GetStatus().rspParams.map((param, i) => {
-        logItem[param] = mock[i]
+        logItem[param] = config.mock[i]
       })
       sendLogItem(lastLog._id, logItem)
       return
