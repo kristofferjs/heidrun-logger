@@ -40,6 +40,8 @@ async function run() {
         logItem[key] = Number(logItem[key])  
       }
     })
+    console.log('Send logitem',  logItem['responseCode'])
+
     // Send data to sanity
     client
       .patch(id)
@@ -84,9 +86,12 @@ async function run() {
           BTCMD_GetStatus().rspParams.map((param, i) => {
             logItem[param] = JSON.parse(data)[i]
           })
-  
-          sendLogItem(lastLog._id, logItem)
-          
+
+          if (logItem['responseCode']) {
+            console.log('Got empty status from brewtroller')
+          } else {
+            sendLogItem(lastLog._id, logItem)
+          }
         })
     
       }
