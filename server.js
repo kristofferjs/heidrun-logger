@@ -27,7 +27,7 @@ const lastLog = client.fetch(lastLogQuery).then(log => {
 
 setInterval(() => {
   http.get(
-    `${url}?a`, (resp) => {
+    `${config.url}?a`, (resp) => {
       let data = ''
       resp.on('data', (chunk) => {
         data += chunk;
