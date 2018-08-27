@@ -1,10 +1,7 @@
 const http = require('http')
-const {createServer} = http
-const { parse } = require('url')
-const next = require('next')
-const dev = process.env.NODE_ENV !== 'production'
-const app = next({ dev })
-const handle = app.getRequestHandler()
+const {parse} = require('url')
+const express = require('express')
+const app = express()
 
 const { BTCMD_GetStatus } = require('./lib/cgiByteCodeMap')
 const { config } = require('./config')
@@ -19,19 +16,17 @@ const client = sanityClient({
 
 const code = 'a'
 
-const lastLogQuery = '*[_type == "brewLog"] | order(_createdAt asc) { _id, title }[0]'
+const lastLogQuery = '*[_type == "brewLog"] | order(_createdAt desc) { _id, title }[0]'
 
 async function run() {
-
   const lastLog = await client.fetch(lastLogQuery).then(log => {
-    console.log('# Last log')
+    console.log('# Start logging')
     console.log('title', log.title)
     console.log('_id', log._id)
     return log
   })
   
   const sendLogItem = (id, logItem) => {
-    console.log('Send logitem', logItem['responseCode'], id)
     const newLogItem = {}
     Object.keys(logItem).forEach(key => {
       // Convert to number
@@ -61,7 +56,7 @@ async function run() {
       .append('log', [newLogItem])
       .commit()
       .then(updatedLog => {
-          console.log('updatedLog')
+          console.log(`Updated: HLT: ${newLogItem['HLT_Temperature']} MASH: ${newLogItem['Mash_Temperature']} BOIL: ${newLogItem['Kettle_Temperature']}`)
         })
       .catch(err => {
         console.error('Sanity client: Oh no, the update failed: ', err.message)
@@ -76,12 +71,13 @@ async function run() {
       timestamp: new Date()
     }
   
-    // testing
+    // Testing with mock
     if (config.mock) {
       console.log('mock')
       BTCMD_GetStatus().rspParams.map((param, i) => {
         logItem[param] = config.mock[i]
       })
+      logItem.HLT_Temperature = Math.random() * 10000
       sendLogItem(lastLog._id, logItem)
       return
     }
@@ -116,23 +112,30 @@ async function run() {
 
 run()
 
+app.get('/', function (req, res) {
+  res.send('Heidrun says hello 🍺')
+})
 
-// app.prepare().then(() => {
-//   createServer((req, res) => {
-//     // Be sure to pass `true` as the second argument to `url.parse`.
-//     // This tells it to parse the query portion of the URL.
-//     const parsedUrl = parse(req.url, true)
-//     const { pathname, query } = parsedUrl
+// Proxy to the brewtroller
+app.get('/api/btnic', function (req, res) {
+  const params = req._parsedUrl.query
+  console.log('parsedUrl.query', req._parsedUrl.query)
+  http.get(
+    `${config.url}?${params}`, resp => {
+      let data = ''
+      resp.on('data', chunk => {
+        data += chunk
+      })
 
-//     if (pathname === '/a') {
-//       app.render(req, res, '/b', query)
-//     } else if (pathname === '/b') {
-//       app.render(req, res, '/a', query)
-//     } else {
-//       handle(req, res, parsedUrl)
-//     }
-//   }).listen(3000, err => {
-//     if (err) throw err
-//     console.log('> Ready on http://localhost:3000')
-//   })
-// })
+      resp.on('end', () => {
+        res.send(`OK ${data}`)
+        return JSON.parse(data)
+      })
+
+    }
+  ).on('error', err => {
+    console.error(`Error connecting to Brewtroller ${err.message}`)
+  })
+})
+
+app.listen(3000, () => console.log('Staring Heidrun Server: port 3000!'))
