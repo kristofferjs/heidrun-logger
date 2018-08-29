@@ -131,8 +131,13 @@ app.get('/', function (req, res) {
 
 // Proxy to the brewtroller
 app.get('/api/btnic', function (req, res) {
+
+  res.header("Access-Control-Allow-Origin", "*")
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept")
+
   const params = req._parsedUrl.query
   console.log('parsedUrl.query', req._parsedUrl.query)
+
   http.get(
     `${config.url}?${params}`, resp => {
       let data = ''
