@@ -37,7 +37,8 @@ function returnResultRemoteCommand(command, result) {
   console.log('sending result', result)
   client
     .patch(command.result.id)
-    .setIfMissing('result', result)
+    .setIfMissing({result})
+    .commit()
 }
 
 function runRemoteCommand(command = {}) {
