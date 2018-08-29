@@ -26,6 +26,48 @@ process.argv.forEach(function (val, index, array) {
   }
 });
 
+const subscription = client.listen('*[_type == "command" && !(_id in path ("drafts.**"))]')
+  .subscribe(command => {
+    console.log('response', command)
+    runRemoteCommand(command)
+  })
+
+
+function returnResultRemoteCommand(command, result) {
+  console.log('sending result', result)
+  client
+    .patch(command.result.id)
+    .setIfMissing('result', result)
+}
+
+function runRemoteCommand(command = {}) {
+  const btnicCommand = command.result && command.result.command
+
+  console.log('command:', btnicCommand)
+
+  if (!btnicCommand) {
+    console.error('No command')
+    return
+  }
+
+  http.get(
+    `${config.url}?${btnicCommand}`, resp => {
+      let data = ''
+      console.log('resp', resp)
+      resp.on('data', chunk => {
+        data += chunk
+      })
+      resp.on('end', () => {
+        console.log('got data', data)
+        returnResultRemoteCommand(command, data)
+      })
+    }
+  ).on('error', err => {
+    console.error(`Error connecting to Brewtroller ${err.message}`)
+  })
+}
+
+
 async function startLog() {
   const lastLog = await client.fetch(lastLogQuery).then(log => {
     console.log('# Start logging')
