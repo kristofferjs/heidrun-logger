@@ -16,9 +16,17 @@ const client = sanityClient({
 
 const code = 'a'
 
+let logging = true
+
 const lastLogQuery = '*[_type == "brewLog"] | order(_createdAt desc) { _id, title }[0]'
 
-async function run() {
+process.argv.forEach(function (val, index, array) {
+  if (val == 'no-log') {
+    logging = false
+  }
+});
+
+async function startLog() {
   const lastLog = await client.fetch(lastLogQuery).then(log => {
     console.log('# Start logging')
     console.log('title', log.title)
@@ -110,7 +118,12 @@ async function run() {
   }, config.intervalSeconds * 1000 || 10000)
 }
 
-run()
+if (logging) {
+  startLog()
+} else {
+  console.log('Logging disabled')
+}
+
 
 app.get('/', function (req, res) {
   res.send('Heidrun says hello 🍺')
